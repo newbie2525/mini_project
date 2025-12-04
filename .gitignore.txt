@@ -13,4 +13,4 @@ __pycache__/
 .DS_Store
 
 # Optional: If your datasets are very large
-# datasets/
+ .datasets/
