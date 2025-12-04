@@ -1,11 +1,18 @@
 {
+  "version": 2,
   "builds": [
     {
-      "src": "api/*.py",
+      "src": "app.py",
       "use": "@vercel/python",
       "config": {
-        "prebuiltPackages": ["numpy", "pandas", "scikit-learn", "scipy"]
+        "maxLambdaSize": "50mb"
       }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "app.py"
     }
   ]
 }

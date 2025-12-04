@@ -1,0 +1,16 @@
+nano .vercelignore
+```
+
+Add this content:
+```
+datasets/
+__pycache__/
+*.pyc
+model/
+build_model.py
+requirements-dev.txt
+venv/
+.env
+.git/
+*.log
+__MACOSX/
