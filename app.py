@@ -6,7 +6,7 @@ import os
 app = Flask(__name__)
 
 # Load pre-computed model and data
-MODEL_PATH = 'model_pickle.pkl'  # Adjust extension if needed
+MODEL_PATH = 'model_pickle'  # Adjust extension if needed
 DATA_PATH = 'processed_data.pkl'
 
 # Global variables for model and data
