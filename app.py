@@ -1,17 +1,36 @@
 from flask import Flask, request, jsonify, render_template
 import pandas as pd
-from model.preprocess import load_and_clean_data, preprocess_data
-from model.recommender import create_similarity_matrix
-from model.model_utils import save_model, load_model
+import pickle
+import os
 
 app = Flask(__name__)
 
-df = load_and_clean_data('datasets/TMDB.csv', rows=5000)
-new_df = preprocess_data(df)
+# Load pre-computed model and data
+MODEL_PATH = 'model_pickle.pkl'  # Adjust extension if needed
+DATA_PATH = 'processed_data.pkl'
 
-similarity = create_similarity_matrix(new_df)
-save_model(similarity, 'model_pickle')
-similarity = load_model('model_pickle')
+# Global variables for model and data
+similarity = None
+new_df = None
+
+def load_models():
+    global similarity, new_df
+    
+    # Check if files exist
+    if not os.path.exists(MODEL_PATH) or not os.path.exists(DATA_PATH):
+        raise FileNotFoundError("Model files not found. Run build_model.py first!")
+    
+    # Load the pre-computed similarity matrix
+    with open(MODEL_PATH, 'rb') as f:
+        similarity = pickle.load(f)
+    
+    # Load the pre-processed dataframe
+    new_df = pd.read_pickle(DATA_PATH)
+    
+    print(f"Loaded {len(new_df)} movies")
+
+# Load models once when the app starts
+load_models()
 
 
 def get_recommendations(movie_titles):
@@ -35,9 +54,9 @@ def get_recommendations(movie_titles):
         for i in movie_indices:
             movie_data = new_df.iloc[i[0]]
             poster_url = f"https://image.tmdb.org/t/p/w200{movie_data['poster_path']}"
-            genres = ', '.join(movie_data['genres']) 
+            genres = ', '.join(movie_data['genres']) if isinstance(movie_data['genres'], list) else movie_data['genres']
             recommended_movies.append({
-                "title": movie_data.title,
+                "title": movie_data['title'],
                 "poster": poster_url,
                 "genres": genres
             })
@@ -51,9 +70,9 @@ def get_movie_details(movie_title):
         return None
     movie_data = movie.iloc[0]
     poster_url = f"https://image.tmdb.org/t/p/w200{movie_data['poster_path']}"
-    genres = ', '.join(movie_data['genres'])  
+    genres = ', '.join(movie_data['genres']) if isinstance(movie_data['genres'], list) else movie_data['genres']
     return {
-        "title": movie_data.title,
+        "title": movie_data['title'],
         "poster": poster_url,
         "genres": genres
     }
@@ -64,8 +83,9 @@ def home():
 
 @app.route('/recommend', methods=['POST'])
 def recommend_movie():
-    movie_titles = request.form.get('movie_title').split(',')
-    movie_titles = [title.strip() for title in movie_titles]  # Clean whitespace
+    movie_titles = request.form.get('movie_title', '').split(',')
+    movie_titles = [title.strip() for title in movie_titles if title.strip()]
+    
     user_movies = [get_movie_details(title) for title in movie_titles if title in new_df['title'].values]
     recommendations = get_recommendations(movie_titles)
 
@@ -80,5 +100,5 @@ def get_movie_titles():
     titles = new_df['title'].dropna().unique().tolist()  
     return jsonify(titles)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# For Vercel
+app = app
